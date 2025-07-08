@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import numpy as np
+import os
 
 app = Flask(__name__)
 
@@ -23,10 +25,10 @@ def index():
     <h2>Calculadora de Demanda de Dinero - Modelos ARDL y ECM</h2>
 
     <form action="/calcular_ardl" method="get">
-      <label>LN_M1_real.L1: <input type="number" step="any" name="m1_l1"></label><br>
-      <label>LN_ITCMR.L1: <input type="number" step="any" name="itcmr_l1"></label><br>
+      <label>M1_real.L1 (valor positivo): <input type="number" step="any" name="m1_l1"></label><br>
+      <label>ITCMR.L1 (valor positivo): <input type="number" step="any" name="itcmr_l1"></label><br>
       <label>GS10.L0: <input type="number" step="any" name="gs10_l0"></label><br>
-      <label>LN_VP.L0: <input type="number" step="any" name="vp_l0"></label><br><br>
+      <label>VP.L0 (valor positivo): <input type="number" step="any" name="vp_l0"></label><br><br>
       <input type="submit" value="Calcular ARDL">
     </form>
 
@@ -42,16 +44,25 @@ def index():
 @app.route('/calcular_ardl')
 def calcular_ardl():
     try:
-        x1 = float(request.args.get('m1_l1', 0))
-        x2 = float(request.args.get('itcmr_l1', 0))
-        x3 = float(request.args.get('gs10_l0', 0))
-        x4 = float(request.args.get('vp_l0', 0))
+        # Obtener y validar entradas
+        m1_l1 = float(request.args.get('m1_l1', 0))
+        itcmr_l1 = float(request.args.get('itcmr_l1', 0))
+        gs10_l0 = float(request.args.get('gs10_l0', 0))
+        vp_l0 = float(request.args.get('vp_l0', 0))
+
+        if m1_l1 <= 0 or itcmr_l1 <= 0 or vp_l0 <= 0:
+            raise ValueError("Las variables en log deben ser mayores que cero.")
+
+        # Aplicar logaritmos solo donde corresponde
+        ln_m1 = np.log(m1_l1)
+        ln_itcmr = np.log(itcmr_l1)
+        ln_vp = np.log(vp_l0)
 
         resultado = (ARDL_COEF['const']
-                     + ARDL_COEF['LN_M1_real.L1'] * x1
-                     + ARDL_COEF['LN_ITCMR.L1'] * x2
-                     + ARDL_COEF['GS10.L0'] * x3
-                     + ARDL_COEF['LN_VP.L0'] * x4)
+                     + ARDL_COEF['LN_M1_real.L1'] * ln_m1
+                     + ARDL_COEF['LN_ITCMR.L1'] * ln_itcmr
+                     + ARDL_COEF['GS10.L0'] * gs10_l0
+                     + ARDL_COEF['LN_VP.L0'] * ln_vp)
 
         return jsonify({
             'modelo': 'ARDL',
@@ -64,11 +75,11 @@ def calcular_ardl():
 @app.route('/calcular_ecm')
 def calcular_ecm():
     try:
-        x1 = float(request.args.get('d_vp', 0))
-        x2 = float(request.args.get('ecm', 0))
+        d_vp = float(request.args.get('d_vp', 0))
+        ecm = float(request.args.get('ecm', 0))
 
-        resultado = (ECM_COEF['D_LN_VP'] * x1
-                     + ECM_COEF['ecm'] * x2)
+        resultado = (ECM_COEF['D_LN_VP'] * d_vp
+                     + ECM_COEF['ecm'] * ecm)
 
         return jsonify({
             'modelo': 'ECM',
@@ -77,8 +88,6 @@ def calcular_ecm():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-
-import os
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
