@@ -78,5 +78,9 @@ def calcular_ecm():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=False)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
