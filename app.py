@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import os
+import math
 
 app = Flask(__name__)
 
@@ -22,17 +23,18 @@ ECM_COEF = {
 def index():
     return '''
     <h2>Calculadora de Demanda de Dinero - Modelos ARDL y ECM</h2>
+    <p><strong>Importante:</strong> Ingresar valores originales (no transformados). El sistema aplicará logaritmo natural cuando sea necesario.</p>
     <form action="/calcular_ardl" method="get">
-      <label>LN_M1_real.L1: <input type="number" step="any" name="m1_l1"></label><br>
-      <label>LN_ITCMR.L1: <input type="number" step="any" name="itcmr_l1"></label><br>
-      <label>GS10.L0: <input type="number" step="any" name="gs10_l0"></label><br>
-      <label>LN_VP.L0: <input type="number" step="any" name="vp_l0"></label><br><br>
+      <label>M1_real (t-1): <input type="number" step="any" name="m1_l1"></label><br>
+      <label>ITCMR (t-1): <input type="number" step="any" name="itcmr_l1"></label><br>
+      <label>GS10 (nivel actual): <input type="number" step="any" name="gs10_l0"></label><br>
+      <label>VP (nivel actual): <input type="number" step="any" name="vp_l0"></label><br><br>
       <input type="submit" value="Calcular ARDL">
     </form>
     <hr>
     <form action="/calcular_ecm" method="get">
-      <label>D_LN_VP: <input type="number" step="any" name="d_vp"></label><br>
-      <label>ecm: <input type="number" step="any" name="ecm"></label><br><br>
+      <label>∆ln(VP): <input type="number" step="any" name="d_vp"></label><br>
+      <label>Error de cointegración (ecm): <input type="number" step="any" name="ecm"></label><br><br>
       <input type="submit" value="Calcular ECM">
     </form>
     '''
@@ -40,13 +42,11 @@ def index():
 @app.route('/calcular_ardl')
 def calcular_ardl():
     try:
-        x1 = float(request.args.get('m1_l1', 0))
-        x2 = float(request.args.get('itcmr_l1', 0))
-        x3 = float(request.args.get('gs10_l0', 0))
-        x4 = float(request.args.get('vp_l0', 0))
-
-        # Debug en logs
-        print(f"[DEBUG ARDL] m1_l1={x1}, itcmr_l1={x2}, gs10_l0={x3}, vp_l0={x4}")
+        # Se aplican logaritmos donde corresponde
+        x1 = math.log(float(request.args.get('m1_l1', 1)))
+        x2 = math.log(float(request.args.get('itcmr_l1', 1)))
+        x3 = float(request.args.get('gs10_l0', 0))  # No se aplica log
+        x4 = math.log(float(request.args.get('vp_l0', 1)))
 
         resultado = (ARDL_COEF['const']
                      + ARDL_COEF['LN_M1_real.L1'] * x1
@@ -64,9 +64,6 @@ def calcular_ecm():
     try:
         x1 = float(request.args.get('d_vp', 0))
         x2 = float(request.args.get('ecm', 0))
-
-        # Debug en logs
-        print(f"[DEBUG ECM] d_vp={x1}, ecm={x2}")
 
         resultado = ECM_COEF['D_LN_VP'] * x1 + ECM_COEF['ecm'] * x2
 
