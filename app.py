@@ -1,6 +1,4 @@
-# Creamos el contenido final del archivo app.py corregido y listo para subir a Render
 
-codigo_final = dedent("""
 from flask import Flask, request, jsonify
 import os
 import math
@@ -100,10 +98,3 @@ def calcular_ecm():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-""")
-
-# Guardar como archivo listo para Render
-with open("/mnt/data/app.py", "w", encoding="utf-8") as f:
-    f.write(codigo_final)
-
-"/mnt/data/app.py generado correctamente"
