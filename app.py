@@ -1,9 +1,6 @@
-# Generar el nuevo código Flask con todas las variables de los modelos ARDL y ECM,
-# incluyendo la transformación e^ARDL para obtener el resultado en pesos
+# Creamos el contenido final del archivo app.py corregido y listo para subir a Render
 
-from textwrap import dedent
-
-nuevo_codigo = dedent("""
+codigo_final = dedent("""
 from flask import Flask, request, jsonify
 import os
 import math
@@ -100,14 +97,13 @@ def calcular_ecm():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 """)
 
-nuevo_codigo[:2000]  # Muestra los primeros caracteres para revisión previa (recorte por longitud)
+# Guardar como archivo listo para Render
+with open("/mnt/data/app.py", "w", encoding="utf-8") as f:
+    f.write(codigo_final)
 
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+"/mnt/data/app.py generado correctamente"
